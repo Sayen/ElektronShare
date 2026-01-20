@@ -6,6 +6,9 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'assets/AppIcon.png', 'assets/logo.png'],
       manifest: {
@@ -18,7 +21,7 @@ export default defineConfig({
         icons: [
           {
             src: 'assets/AppIcon.png',
-            sizes: '192x192', // Assuming the provided icon is at least this size, ideally we resize but for now use it
+            sizes: '192x192',
             type: 'image/png'
           },
           {

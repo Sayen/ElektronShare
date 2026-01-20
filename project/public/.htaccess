@@ -1,0 +1,26 @@
+# Apache Configuration
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Protect sensitive files
+  RewriteRule ^config\.php$ - [F,L]
+  RewriteRule ^composer\.(json|lock)$ - [F,L]
+  RewriteRule ^vendor/ - [F,L]
+
+  # API Routing (optional, but good practice if we want clean URLs later)
+  # currently /api/files.php works directly.
+
+  # Vue Router: Redirect all non-file/non-api requests to index.html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_URI} !^/api/
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# Security
+Options -Indexes
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>

@@ -13,30 +13,21 @@ This is a complete Progressive Web App (PWA) for managing and downloading files,
 - PHP 8.4
 - MySQL
 - Apache or Nginx
-- Composer (for installation of backend dependencies)
 
 ## Installation
 
 ### 1. Upload Files
 Upload the contents of the `public` directory to your web server's public root (e.g., `public_html` or `www`).
+**Important:** Ensure the `vendor` folder is included in your upload. It contains the necessary backend libraries.
 
-### 2. Install Dependencies
-Connect to your server via SSH and navigate to the directory where you uploaded the files. Run:
-
-```bash
-composer install
-```
-
-*Note: If you do not have SSH access, run `composer install` locally and upload the generated `vendor` folder to the server.*
-
-### 3. Setup Database
+### 2. Setup Database
 Open your browser and navigate to `http://yourdomain.com/install.php`.
 Follow the instructions to:
 - Connect to your MySQL database.
 - Create the Admin account.
 - Generate VAPID keys for Push Notifications.
 
-### 4. Finalize
+### 3. Finalize
 - The installer will create a `config.php` file.
 - **Delete `install.php`** after successful installation for security.
 
@@ -44,7 +35,7 @@ Follow the instructions to:
 - Login at `http://yourdomain.com/admin/login` (or click "Admin Login" in the menu).
 - Use the credentials you set during installation.
 
-## Development
+## Development (Optional)
 
 ### Frontend
 The frontend source code is in `frontend/`.
