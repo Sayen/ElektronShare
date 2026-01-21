@@ -39,8 +39,20 @@ if ($method === 'GET') {
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
         $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
-        $stmt = $pdo->prepare("INSERT INTO push_subscriptions (endpoint, p256dh, auth, user_agent, ip_address) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$endpoint, $key, $token, $userAgent, $ip]);
+        try {
+            // Try new schema first
+            $stmt = $pdo->prepare("INSERT INTO push_subscriptions (endpoint, p256dh, auth, user_agent, ip_address) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$endpoint, $key, $token, $userAgent, $ip]);
+        } catch (PDOException $e) {
+            // Fallback to old schema if columns missing (user didn't run update.php)
+            // Error code 42S22 is "Column not found"
+            if ($e->getCode() === '42S22') {
+                 $stmt = $pdo->prepare("INSERT INTO push_subscriptions (endpoint, p256dh, auth) VALUES (?, ?, ?)");
+                 $stmt->execute([$endpoint, $key, $token]);
+            } else {
+                throw $e;
+            }
+        }
         echo json_encode(['success' => true]);
 
     } elseif ($action === 'send') {
