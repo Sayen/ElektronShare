@@ -1,6 +1,10 @@
 <?php
 // install.php
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 if (file_exists('config.php')) {
     die("Installation already completed. If you want to reinstall, please delete config.php.");
 }
@@ -55,18 +59,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Generate VAPID Keys
-            require_once 'vendor/autoload.php';
-            use Minishlink\WebPush\VAPID;
+            // Require autoload if available to use WebPush
+            if (file_exists('vendor/autoload.php')) {
+                require_once 'vendor/autoload.php';
+                // Note: use statement inside function/block is syntax error in older PHP or strict configs?
+                // Actually 'use' aliases must be global scope or we use FQCN.
 
-            $vapid = VAPID::createVapidKeys();
+                $vapid = \Minishlink\WebPush\VAPID::createVapidKeys();
+
+                $stmt = $pdo->prepare("INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?");
+                $stmt->execute(['vapid_public_key', $vapid['publicKey'], $vapid['publicKey']]);
+                $stmt->execute(['vapid_private_key', $vapid['privateKey'], $vapid['privateKey']]);
+            } else {
+                throw new Exception("vendor/autoload.php not found. Did you run composer install or upload the vendor folder?");
+            }
 
             // Insert Settings
             $stmt = $pdo->prepare("INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?");
 
             $pass_hash = password_hash($admin_pass, PASSWORD_DEFAULT);
             $stmt->execute(['admin_password', $pass_hash, $pass_hash]);
-            $stmt->execute(['vapid_public_key', $vapid['publicKey'], $vapid['publicKey']]);
-            $stmt->execute(['vapid_private_key', $vapid['privateKey'], $vapid['privateKey']]);
 
             // Create config file
             $config_content = "<?php\n";
