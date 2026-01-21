@@ -1,0 +1,22 @@
+RewriteEngine On
+
+# Allow access to install.php
+RewriteRule ^install.php$ - [L]
+
+# Allow access to api/
+RewriteRule ^api/ - [L]
+
+# Allow access to uploads/
+RewriteRule ^uploads/ - [L]
+
+# Redirect root to public/index.html
+RewriteRule ^$ public/index.html [L]
+
+# If file exists in public/, serve it
+RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+RewriteRule ^(.*)$ public/$1 [L]
+
+# Otherwise serve public/index.html (SPA Fallback)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . public/index.html [L]
