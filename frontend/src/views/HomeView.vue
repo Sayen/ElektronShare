@@ -15,7 +15,9 @@
     <div v-if="loading" class="text-center py-10 text-gray-500">Lade...</div>
 
     <div v-else>
-      <div v-if="currentFolder && currentFolder.description" class="bg-white p-6 rounded-lg shadow-sm mb-6 prose max-w-none text-gray-700" v-html="parsedDescription"></div>
+      <div v-if="currentFolder && currentFolder.description" class="bg-white p-6 rounded-lg shadow-sm mb-6">
+           <div ref="viewerRef"></div>
+      </div>
 
       <div v-if="folders.length > 0" class="mb-8">
         <h3 class="text-sm font-bold text-gray-400 uppercase mb-3 tracking-wider">Ordner</h3>
@@ -52,10 +54,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
-import { marked } from 'marked';
+// import { marked } from 'marked';
+import Viewer from '@toast-ui/editor/dist/toastui-editor-viewer';
+import '@toast-ui/editor/dist/toastui-editor-viewer.css';
 
 const route = useRoute();
 const router = useRouter();
@@ -66,9 +70,29 @@ const files = ref([]);
 const loading = ref(false);
 const breadcrumbs = ref([]);
 
-const parsedDescription = computed(() => {
-    return currentFolder.value?.description ? marked(currentFolder.value.description) : '';
-});
+// const parsedDescription = computed(() => {
+//     return currentFolder.value?.description ? marked(currentFolder.value.description) : '';
+// });
+
+const viewerRef = ref(null);
+let viewerInstance = null;
+
+function updateViewer() {
+    nextTick(() => {
+        if (!currentFolder.value?.description || !viewerRef.value) return;
+
+        // Destroy old instance if exists to avoid duplication or weird state
+        if(viewerInstance) {
+            viewerInstance.destroy(); // destroy method might not exist in viewer? Viewer just replaces innerHTML.
+            // Actually Viewer doesn't have destroy in same way, but creating new one on same EL works or we can setMarkdown
+        }
+
+        viewerInstance = new Viewer({
+            el: viewerRef.value,
+            initialValue: currentFolder.value.description
+        });
+    });
+}
 
 function formatDate(dateStr) {
     if(!dateStr) return '';
@@ -83,6 +107,7 @@ async function loadFolder(id) {
         currentFolder.value = res.data.current_folder;
         folders.value = res.data.folders;
         files.value = res.data.files;
+        updateViewer();
     } catch (e) {
         console.error(e);
     } finally {

@@ -50,6 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     endpoint TEXT NOT NULL,
                     p256dh TEXT NOT NULL,
                     auth TEXT NOT NULL,
+                    user_agent TEXT,
+                    ip_address VARCHAR(45),
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )"
             ];

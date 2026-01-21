@@ -6,6 +6,9 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
       includeAssets: ['logo.png', 'AppIcon.png'],
       manifest: {

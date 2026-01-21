@@ -22,7 +22,7 @@ if ($method === 'GET') {
     // Admin only for stats
     if (isset($_SESSION['admin_logged_in'])) {
         if ($action === 'list') {
-            $stmt = $pdo->query("SELECT id, created_at FROM push_subscriptions ORDER BY created_at DESC");
+            $stmt = $pdo->query("SELECT id, created_at, user_agent, ip_address FROM push_subscriptions ORDER BY created_at DESC");
             echo json_encode(['subscriptions' => $stmt->fetchAll()]);
         }
     }
@@ -36,9 +36,11 @@ if ($method === 'GET') {
         $endpoint = $subscription['endpoint'];
         $key = $subscription['keys']['p256dh'];
         $token = $subscription['keys']['auth'];
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
-        $stmt = $pdo->prepare("INSERT INTO push_subscriptions (endpoint, p256dh, auth) VALUES (?, ?, ?)");
-        $stmt->execute([$endpoint, $key, $token]);
+        $stmt = $pdo->prepare("INSERT INTO push_subscriptions (endpoint, p256dh, auth, user_agent, ip_address) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$endpoint, $key, $token, $userAgent, $ip]);
         echo json_encode(['success' => true]);
 
     } elseif ($action === 'send') {

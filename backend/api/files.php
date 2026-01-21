@@ -7,7 +7,15 @@ $isAdmin = isset($_SESSION['admin_logged_in']);
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
+    $action = $_GET['action'] ?? '';
     $folder_id = isset($_GET['folder_id']) && is_numeric($_GET['folder_id']) ? (int)$_GET['folder_id'] : null;
+
+    if ($action === 'get_all_folders') {
+        if (!$isAdmin) { http_response_code(401); exit; }
+        $stmt = $pdo->query("SELECT id, parent_id, name FROM folders ORDER BY name ASC");
+        echo json_encode(['folders' => $stmt->fetchAll()]);
+        exit;
+    }
 
     if ($folder_id === null) {
         // Get Root

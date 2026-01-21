@@ -27,13 +27,13 @@
 
             <div class="border-2 border-dashed border-gray-300 rounded p-6 text-center mb-6" @dragover.prevent @drop.prevent="handleDrop">
                 <p class="text-gray-500 mb-2">Dateien hierher ziehen oder auswählen</p>
-                <input type="file" ref="fileInput" @change="handleFileSelect" class="hidden">
+                <input type="file" ref="fileInput" @change="handleFileSelect" class="hidden" multiple>
                 <button @click="$refs.fileInput.click()" class="text-elektron-blue underline">Durchsuchen</button>
             </div>
 
              <div class="mb-6" v-if="currentFolder">
-                <label class="block font-bold mb-2">Ordner Beschreibung (Markdown)</label>
-                <textarea v-model="currentFolderDescription" class="w-full border p-2 rounded h-32 font-mono"></textarea>
+                <label class="block font-bold mb-2">Ordner Beschreibung</label>
+                <div ref="editorRef" class="mb-2"></div>
                 <button @click="updateFolder" class="mt-2 bg-green-600 text-white px-4 py-2 rounded">Speichern</button>
              </div>
 
@@ -69,8 +69,30 @@
         <div v-if="currentTab === 'push'">
             <h2 class="text-xl font-bold mb-4">Push Nachricht senden</h2>
 
-            <div class="bg-blue-50 p-4 rounded mb-6 text-sm text-blue-800">
+             <div class="bg-blue-50 p-4 rounded mb-6 text-sm text-blue-800">
                 <span class="font-bold">{{ pushStats.length }}</span> Abonnenten registriert.
+            </div>
+
+             <div class="mb-8">
+                <h3 class="font-bold mb-2">Abonnenten Liste (Technisch)</h3>
+                <div class="bg-white border rounded overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-100 text-gray-600 uppercase">
+                            <tr>
+                                <th class="p-3">Datum</th>
+                                <th class="p-3">IP Adresse</th>
+                                <th class="p-3">User Agent</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            <tr v-for="sub in pushStats" :key="sub.id" class="hover:bg-gray-50">
+                                <td class="p-3 whitespace-nowrap">{{ new Date(sub.created_at).toLocaleString('de-CH') }}</td>
+                                <td class="p-3 font-mono">{{ sub.ip_address || '-' }}</td>
+                                <td class="p-3 text-xs text-gray-500 truncate max-w-xs" :title="sub.user_agent">{{ sub.user_agent || '-' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <form @submit.prevent="sendPush" class="max-w-lg">
@@ -83,11 +105,16 @@
                     <textarea v-model="pushForm.body" class="w-full border p-2 rounded h-24" required></textarea>
                 </div>
                  <div class="mb-4">
-                    <label class="block font-bold mb-2">Link (Optional)</label>
-                    <input v-model="pushForm.url" class="w-full border p-2 rounded" placeholder="/">
+                    <label class="block font-bold mb-2">Link</label>
+                    <div class="flex space-x-2">
+                        <input v-model="pushForm.url" class="flex-1 border p-2 rounded" placeholder="/">
+                        <button type="button" @click="openFolderSelector" class="bg-gray-200 px-3 py-2 rounded text-sm hover:bg-gray-300">Ordner wählen</button>
+                    </div>
                 </div>
                 <button type="submit" class="bg-elektron-blue text-white px-6 py-2 rounded hover:bg-opacity-90">Senden</button>
             </form>
+
+            <FolderTreeModal v-if="showFolderSelector" :tree="folderTree" :selected-id="null" @close="showFolderSelector = false" @select="selectPushFolder" />
         </div>
 
         <div v-if="currentTab === 'settings'">
@@ -107,9 +134,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, nextTick } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+import Editor from '@toast-ui/editor';
+import '@toast-ui/editor/dist/toastui-editor.css';
+import FolderTreeModal from '../components/FolderTreeModal.vue';
 
 const router = useRouter();
 const currentTab = ref('files');
@@ -118,13 +148,19 @@ const currentFolder = ref(null);
 const folders = ref([]);
 const files = ref([]);
 const parentId = ref(null);
-const currentFolderDescription = ref('');
+// const currentFolderDescription = ref(''); // Removed in favor of editor
 
 const showCreateFolder = ref(false);
 const newFolderName = ref('');
 
+// Editor
+const editorRef = ref(null);
+let editorInstance = null;
+
 const pushStats = ref([]);
 const pushForm = ref({ title: '', body: '', url: '/' });
+const showFolderSelector = ref(false);
+const folderTree = ref([]);
 
 const newPassword = ref('');
 
@@ -136,10 +172,35 @@ async function loadFolder(id) {
         folders.value = res.data.folders;
         files.value = res.data.files;
         parentId.value = res.data.parent_id;
-        currentFolderDescription.value = currentFolder.value?.description || '';
+
+        const desc = currentFolder.value?.description || '';
+        if (editorInstance) {
+            editorInstance.setMarkdown(desc);
+        } else {
+             // If editor not yet initialized (e.g. first load), initEditor will handle initial value
+             // But we are in "files" tab by default, so it should be visible.
+             // If we switch tabs, we might need to re-init or keep it alive.
+             // Let's rely on watch(currentFolder) or similar if needed.
+             // For now, simple approach:
+             nextTick(() => {
+                 if(editorInstance) editorInstance.setMarkdown(desc);
+                 else initEditor(desc);
+             });
+        }
     } catch (e) {
         console.error(e);
     }
+}
+
+function initEditor(initialValue) {
+    if(!editorRef.value) return;
+    editorInstance = new Editor({
+        el: editorRef.value,
+        height: '400px',
+        initialEditType: 'wysiwyg',
+        previewStyle: 'vertical',
+        initialValue: initialValue
+    });
 }
 
 async function createFolder() {
@@ -161,13 +222,21 @@ async function createFolder() {
 }
 
 async function handleFileSelect(e) {
-    const file = e.target.files[0];
-    if(file) uploadFile(file);
+    if(e.target.files.length > 0) {
+        for(let i=0; i<e.target.files.length; i++) {
+            await uploadFile(e.target.files[i]);
+        }
+        loadFolder(currentFolder.value.id);
+    }
 }
 
-function handleDrop(e) {
-    const file = e.dataTransfer.files[0];
-    if(file) uploadFile(file);
+async function handleDrop(e) {
+    if(e.dataTransfer.files.length > 0) {
+         for(let i=0; i<e.dataTransfer.files.length; i++) {
+            await uploadFile(e.dataTransfer.files[i]);
+        }
+        loadFolder(currentFolder.value.id);
+    }
 }
 
 async function uploadFile(file) {
@@ -178,22 +247,25 @@ async function uploadFile(file) {
 
     try {
         await axios.post('/api/files.php', formData);
-        loadFolder(currentFolder.value.id);
     } catch (e) {
-        alert("Upload failed");
+        console.error("Upload failed", e);
+        alert(`Fehler beim Upload von ${file.name}`);
     }
 }
 
 async function updateFolder() {
+    if(!editorInstance) return;
+    const markdown = editorInstance.getMarkdown();
+
     const params = new URLSearchParams();
     params.append('action', 'update_folder');
     params.append('id', currentFolder.value.id);
-    params.append('description', currentFolderDescription.value);
+    params.append('description', markdown);
 
     try {
         await axios.post('/api/files.php', params);
         alert("Gespeichert");
-        loadFolder(currentFolder.value.id);
+        // loadFolder(currentFolder.value.id); // No need to reload everything
     } catch (e) {
         alert("Fehler");
     }
@@ -214,6 +286,36 @@ async function loadPushStats() {
         const res = await axios.get('/api/push.php?action=list');
         pushStats.value = res.data.subscriptions || [];
     } catch (e) {}
+}
+
+async function openFolderSelector() {
+    try {
+        const res = await axios.get('/api/files.php?action=get_all_folders');
+        const list = res.data.folders;
+        // Build Tree
+        const map = {};
+        const roots = [];
+        list.forEach(f => {
+            f.children = [];
+            map[f.id] = f;
+        });
+        list.forEach(f => {
+            if(f.parent_id && map[f.parent_id]) {
+                map[f.parent_id].children.push(f);
+            } else {
+                roots.push(f);
+            }
+        });
+        folderTree.value = roots;
+        showFolderSelector.value = true;
+    } catch(e) {
+        alert("Fehler beim Laden der Ordner");
+    }
+}
+
+function selectPushFolder(id) {
+    pushForm.value.url = `/?folder=${id}`;
+    showFolderSelector.value = false;
 }
 
 async function sendPush() {
