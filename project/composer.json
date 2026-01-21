@@ -1,0 +1,7 @@
+{
+    "name": "project/filemanager",
+    "description": "PWA Filemanager with Push",
+    "require": {
+        "minishlink/web-push": "^9.0"
+    }
+}

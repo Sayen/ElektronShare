@@ -1,0 +1,1 @@
+{"name":"Elektron Download Center","short_name":"Elektron","description":"Download Center & File Manager","start_url":"./","display":"standalone","background_color":"#ffffff","theme_color":"#5681a5","lang":"en","scope":"./","icons":[{"src":"assets/AppIcon.png","sizes":"192x192","type":"image/png"},{"src":"assets/AppIcon.png","sizes":"512x512","type":"image/png"}]}
