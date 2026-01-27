@@ -4,6 +4,10 @@ require_once __DIR__ . '/../db.php';
 
 session_start();
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'POST') {
@@ -45,5 +49,8 @@ if ($method === 'POST') {
         echo json_encode(['success' => true]);
     }
 } elseif ($method === 'GET') {
-    echo json_encode(['logged_in' => isset($_SESSION['admin_logged_in'])]);
+    echo json_encode([
+        'logged_in' => isset($_SESSION['admin_logged_in']),
+        'csrf_token' => $_SESSION['csrf_token']
+    ]);
 }
