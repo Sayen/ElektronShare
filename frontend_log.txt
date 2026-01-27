@@ -1,0 +1,15 @@
+
+> elektron-pwa@0.0.0 dev
+> vite
+
+
+  VITE v6.4.1  ready in 619 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+[1m[33m[@vue/compiler-sfc][0m[33m `defineProps` is a compiler macro and no longer needs to be imported.[0m
+
+[1m[33m[@vue/compiler-sfc][0m[33m `defineEmits` is a compiler macro and no longer needs to be imported.[0m
+
+3:36:49 PM [vite] (client) hmr update /src/views/HomeView.vue, /src/style.css
+3:36:59 PM [vite] (client) hmr update /src/views/AdminDashboard.vue, /src/style.css

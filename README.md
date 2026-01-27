@@ -4,16 +4,20 @@
 
 A modern, progressive web application (PWA) for managing files and folders, designed with the Elektron corporate identity. Built with Vue 3 and PHP.
 
-## ✨ Features
+## ✨ Features (v0.2)
 
-*   **📂 File Management**: Create folders, upload files, and organize content in a hierarchical structure.
+*   **📂 File Management**: Create, Rename, Move, and recursively Delete folders and files.
+*   **🔍 Search & Sort**: Full text search and sorting options (Name, Date).
 *   **📝 WYSIWYG Editor**: Rich text editing for folder descriptions using Markdown (powered by Toast UI).
 *   **🚀 Progressive Web App**: Installable on devices, offline-capable (basic shell), and optimized for performance.
+*   **🌙 Dark Mode**: Built-in Dark Mode support.
+*   **📄 PDF Preview**: Integrated PDF previewer.
 *   **🔔 Push Notifications**:
     *   Send notifications to all subscribers.
     *   **Deep Linking**: Direct users to specific folders from a notification.
     *   **Technical Insights**: View subscriber details (IP, User Agent).
-*   **☁️ Multi-Upload**: Drag and drop support for uploading multiple files simultaneously.
+*   **☁️ Multi-Upload**: Drag and drop support with progress indicators.
+*   **🛡️ Security**: CSRF Protection implemented.
 
 ## 🛠️ Tech Stack
 
@@ -62,7 +66,7 @@ A modern, progressive web application (PWA) for managing files and folders, desi
 
 4.  **Database Setup**:
     *   **Fresh Install**: Go to `your-site.com/install.php`.
-    *   **Update**: If updating an existing instance, upload and run `update.php` (e.g., `your-site.com/update.php`) to migrate the schema.
+    *   **Update**: If updating an existing instance (e.g. v0.1 to v0.2), you **must** upload and run `update.php` (e.g., `your-site.com/update.php`) to add new database columns. If you skip this, new features like Push Analytics might not work fully.
 
 ## 🤖 For AI Agents
 

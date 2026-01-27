@@ -22,8 +22,19 @@ if ($method === 'GET') {
     // Admin only for stats
     if (isset($_SESSION['admin_logged_in'])) {
         if ($action === 'list') {
-            $stmt = $pdo->query("SELECT id, created_at, user_agent, ip_address FROM push_subscriptions ORDER BY created_at DESC");
-            echo json_encode(['subscriptions' => $stmt->fetchAll()]);
+            try {
+                $stmt = $pdo->query("SELECT id, created_at, user_agent, ip_address FROM push_subscriptions ORDER BY created_at DESC");
+                $subs = $stmt->fetchAll();
+            } catch (PDOException $e) {
+                // Fallback for old schema (missing user_agent/ip columns)
+                if ($e->getCode() === '42S22') {
+                     $stmt = $pdo->query("SELECT id, created_at FROM push_subscriptions ORDER BY created_at DESC");
+                     $subs = $stmt->fetchAll();
+                } else {
+                    throw $e;
+                }
+            }
+            echo json_encode(['subscriptions' => $subs]);
         }
     }
 
@@ -32,32 +43,53 @@ if ($method === 'GET') {
     $action = $input['action'] ?? '';
 
     if ($action === 'subscribe') {
-        $subscription = $input['subscription'];
-        $endpoint = $subscription['endpoint'];
-        $key = $subscription['keys']['p256dh'];
-        $token = $subscription['keys']['auth'];
-        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-
         try {
-            // Try new schema first
-            $stmt = $pdo->prepare("INSERT INTO push_subscriptions (endpoint, p256dh, auth, user_agent, ip_address) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$endpoint, $key, $token, $userAgent, $ip]);
-        } catch (PDOException $e) {
-            // Fallback to old schema if columns missing (user didn't run update.php)
-            // Error code 42S22 is "Column not found"
-            if ($e->getCode() === '42S22') {
-                 $stmt = $pdo->prepare("INSERT INTO push_subscriptions (endpoint, p256dh, auth) VALUES (?, ?, ?)");
-                 $stmt->execute([$endpoint, $key, $token]);
-            } else {
-                throw $e;
+            if (!isset($input['subscription'])) {
+                throw new Exception("Missing subscription data");
             }
+            $subscription = $input['subscription'];
+            $endpoint = $subscription['endpoint'] ?? '';
+            $key = $subscription['keys']['p256dh'] ?? '';
+            $token = $subscription['keys']['auth'] ?? '';
+
+            if (!$endpoint || !$key || !$token) {
+                throw new Exception("Invalid subscription data");
+            }
+
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+
+            try {
+                // Try new schema first
+                $stmt = $pdo->prepare("INSERT INTO push_subscriptions (endpoint, p256dh, auth, user_agent, ip_address) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$endpoint, $key, $token, $userAgent, $ip]);
+            } catch (PDOException $e) {
+                // Fallback to old schema if columns missing (user didn't run update.php)
+                // Error code 42S22 is "Column not found"
+                if ($e->getCode() === '42S22') {
+                     $stmt = $pdo->prepare("INSERT INTO push_subscriptions (endpoint, p256dh, auth) VALUES (?, ?, ?)");
+                     $stmt->execute([$endpoint, $key, $token]);
+                } else {
+                    throw $e;
+                }
+            }
+            echo json_encode(['success' => true]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
         }
-        echo json_encode(['success' => true]);
 
     } elseif ($action === 'send') {
         if (!isset($_SESSION['admin_logged_in'])) {
             http_response_code(401); exit;
+        }
+
+        $headers = array_change_key_case(getallheaders(), CASE_LOWER);
+        $csrf_token = $headers['x-csrf-token'] ?? '';
+        if (!hash_equals($_SESSION['csrf_token'] ?? '', $csrf_token)) {
+             http_response_code(403);
+             echo json_encode(['error' => 'Invalid CSRF token']);
+             exit;
         }
 
         $title = $input['title'];
