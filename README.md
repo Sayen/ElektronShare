@@ -66,7 +66,7 @@ A modern, progressive web application (PWA) for managing files and folders, desi
 
 4.  **Database Setup**:
     *   **Fresh Install**: Go to `your-site.com/install.php`.
-    *   **Update**: If updating an existing instance, upload and run `update.php` (e.g., `your-site.com/update.php`) to migrate the schema.
+    *   **Update**: If updating an existing instance (e.g. v0.1 to v0.2), you **must** upload and run `update.php` (e.g., `your-site.com/update.php`) to add new database columns. If you skip this, new features like Push Analytics might not work fully.
 
 ## 🤖 For AI Agents
 
