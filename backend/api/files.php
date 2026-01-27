@@ -6,9 +6,83 @@ session_start();
 $isAdmin = isset($_SESSION['admin_logged_in']);
 $method = $_SERVER['REQUEST_METHOD'];
 
+// --- Helper Functions ---
+
+function getBreadcrumbs($pdo, $folderId) {
+    $crumbs = [];
+    $curr = $folderId;
+    while ($curr) {
+        $stmt = $pdo->prepare("SELECT id, name, parent_id FROM folders WHERE id = ?");
+        $stmt->execute([$curr]);
+        $f = $stmt->fetch();
+        if (!$f) break;
+        array_unshift($crumbs, ['id' => $f['id'], 'name' => $f['name']]);
+        $curr = $f['parent_id'];
+    }
+    return $crumbs;
+}
+
+function deleteFolderRecursive($pdo, $folderId) {
+    // Delete files in this folder
+    $stmt = $pdo->prepare("SELECT path FROM files WHERE folder_id = ?");
+    $stmt->execute([$folderId]);
+    while ($path = $stmt->fetchColumn()) {
+        @unlink(__DIR__ . '/../uploads/' . $path);
+    }
+    $pdo->prepare("DELETE FROM files WHERE folder_id = ?")->execute([$folderId]);
+
+    // Recursive call for subfolders
+    $stmt = $pdo->prepare("SELECT id FROM folders WHERE parent_id = ?");
+    $stmt->execute([$folderId]);
+    while ($subId = $stmt->fetchColumn()) {
+        deleteFolderRecursive($pdo, $subId);
+    }
+
+    // Delete folder itself
+    $pdo->prepare("DELETE FROM folders WHERE id = ?")->execute([$folderId]);
+}
+
+function verifyCsrf() {
+    $headers = array_change_key_case(getallheaders(), CASE_LOWER);
+    $token = $headers['x-csrf-token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Invalid CSRF token']);
+        exit;
+    }
+}
+
+// --- Request Handling ---
+
 if ($method === 'GET') {
     $action = $_GET['action'] ?? '';
     $folder_id = isset($_GET['folder_id']) && is_numeric($_GET['folder_id']) ? (int)$_GET['folder_id'] : null;
+
+    if ($action === 'search') {
+        $query = $_GET['query'] ?? '';
+        $term = '%' . $query . '%';
+
+        // For folders, we also want to know their parent's name for context if possible,
+        // but simple join on parent_id is enough.
+        $folderStmt = $pdo->prepare("SELECT f.id, f.name, f.parent_id, p.name as parent_name
+                                     FROM folders f
+                                     LEFT JOIN folders p ON f.parent_id = p.id
+                                     WHERE f.name LIKE ?
+                                     ORDER BY f.name ASC");
+        $folderStmt->execute([$term]);
+        $folders = $folderStmt->fetchAll();
+
+        $fileStmt = $pdo->prepare("SELECT f.id, f.filename, f.folder_id, f.created_at, f.path, f.mime_type, fo.name as folder_name
+                                   FROM files f
+                                   LEFT JOIN folders fo ON f.folder_id = fo.id
+                                   WHERE f.filename LIKE ?
+                                   ORDER BY f.filename ASC");
+        $fileStmt->execute([$term]);
+        $files = $fileStmt->fetchAll();
+
+        echo json_encode(['folders' => $folders, 'files' => $files]);
+        exit;
+    }
 
     if ($action === 'get_all_folders') {
         if (!$isAdmin) { http_response_code(401); exit; }
@@ -23,8 +97,7 @@ if ($method === 'GET') {
         $stmt->execute();
         $folder = $stmt->fetch();
         if (!$folder) {
-            // Should exist from install
-             echo json_encode(['error' => 'Root not found']); exit;
+            echo json_encode(['error' => 'Root not found']); exit;
         }
         $folder_id = $folder['id'];
     } else {
@@ -45,21 +118,21 @@ if ($method === 'GET') {
     $files = $stmt->fetchAll();
 
     // Add parent ID for navigation
-    $parent = null;
-    if ($folder['parent_id']) {
-        $parent = $folder['parent_id'];
-    }
+    $parent = $folder['parent_id'] ?? null;
+    $breadcrumbs = getBreadcrumbs($pdo, $folder_id);
 
     echo json_encode([
         'current_folder' => $folder,
         'parent_id' => $parent,
         'folders' => $subfolders,
         'files' => $files,
+        'breadcrumbs' => $breadcrumbs,
         'is_admin' => $isAdmin
     ]);
 
 } elseif ($method === 'POST') {
     if (!$isAdmin) { http_response_code(401); exit; }
+    verifyCsrf();
 
     $action = $_POST['action'] ?? '';
 
@@ -91,7 +164,7 @@ if ($method === 'GET') {
 
     } elseif ($action === 'update_folder') {
         $id = $_POST['id'];
-        $description = $_POST['description']; // Markdown
+        $description = $_POST['description'];
         $name = $_POST['name'] ?? null;
 
         $sql = "UPDATE folders SET description = ?";
@@ -108,9 +181,54 @@ if ($method === 'GET') {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         echo json_encode(['success' => true]);
+
+    } elseif ($action === 'rename_item') {
+        $type = $_POST['type']; // 'file' or 'folder'
+        $id = $_POST['id'];
+        $newName = $_POST['new_name'];
+
+        if ($type === 'file') {
+             $stmt = $pdo->prepare("UPDATE files SET filename = ? WHERE id = ?");
+             $stmt->execute([$newName, $id]);
+        } else {
+             $stmt = $pdo->prepare("UPDATE folders SET name = ? WHERE id = ?");
+             $stmt->execute([$newName, $id]);
+        }
+        echo json_encode(['success' => true]);
+
+    } elseif ($action === 'move_item') {
+        $type = $_POST['type'];
+        $id = $_POST['id'];
+        $targetFolderId = $_POST['target_folder_id']; // This is the ID of the folder to move INTO
+
+        // Prevent moving folder into itself or children
+        if ($type === 'folder') {
+            if ($id == $targetFolderId) {
+                echo json_encode(['error' => 'Cannot move folder into itself']); exit;
+            }
+            // Check if target is child of source
+            $curr = $targetFolderId;
+            while($curr) {
+                 $stmt = $pdo->prepare("SELECT parent_id FROM folders WHERE id = ?");
+                 $stmt->execute([$curr]);
+                 $pid = $stmt->fetchColumn();
+                 if ($pid == $id) {
+                     echo json_encode(['error' => 'Cannot move folder into its own child']); exit;
+                 }
+                 $curr = $pid;
+            }
+            $stmt = $pdo->prepare("UPDATE folders SET parent_id = ? WHERE id = ?");
+            $stmt->execute([$targetFolderId, $id]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE files SET folder_id = ? WHERE id = ?");
+            $stmt->execute([$targetFolderId, $id]);
+        }
+        echo json_encode(['success' => true]);
     }
+
 } elseif ($method === 'DELETE') {
     if (!$isAdmin) { http_response_code(401); exit; }
+    verifyCsrf();
 
     $input = json_decode(file_get_contents('php://input'), true);
     $type = $input['type']; // 'folder' or 'file'
@@ -125,13 +243,7 @@ if ($method === 'GET') {
             $pdo->prepare("DELETE FROM files WHERE id = ?")->execute([$id]);
         }
     } elseif ($type === 'folder') {
-        $stmt = $pdo->prepare("SELECT path FROM files WHERE folder_id = ?");
-        $stmt->execute([$id]);
-        while($path = $stmt->fetchColumn()) {
-            @unlink(__DIR__ . '/../uploads/' . $path);
-        }
-
-        $pdo->prepare("DELETE FROM folders WHERE id = ?")->execute([$id]);
+        deleteFolderRecursive($pdo, $id);
     }
     echo json_encode(['success' => true]);
 }

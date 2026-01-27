@@ -60,6 +60,14 @@ if ($method === 'GET') {
             http_response_code(401); exit;
         }
 
+        $headers = array_change_key_case(getallheaders(), CASE_LOWER);
+        $csrf_token = $headers['x-csrf-token'] ?? '';
+        if (!hash_equals($_SESSION['csrf_token'] ?? '', $csrf_token)) {
+             http_response_code(403);
+             echo json_encode(['error' => 'Invalid CSRF token']);
+             exit;
+        }
+
         $title = $input['title'];
         $body = $input['body'];
         $url = $input['url'] ?? '/';
