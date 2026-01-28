@@ -25,13 +25,13 @@
             </span>
         </nav>
 
-        <div class="flex space-x-2">
-            <input v-model="searchQuery" @keyup.enter="performSearch" placeholder="Suchen..." class="border border-gray-300 dark:border-gray-600 rounded px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-elektron-blue">
+        <div class="flex flex-wrap gap-2">
+            <input v-model="searchQuery" @keyup.enter="performSearch" placeholder="Suchen..." class="border border-gray-300 dark:border-gray-600 rounded px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-elektron-blue flex-grow min-w-[120px]">
             <button @click="performSearch" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-1 rounded text-sm transition-colors dark:text-white">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </button>
 
-            <select v-model="sortOption" class="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-elektron-blue">
+            <select v-model="sortOption" class="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-elektron-blue flex-shrink-0">
                 <option value="name_asc">Name (A-Z)</option>
                 <option value="name_desc">Name (Z-A)</option>
                 <option value="date_desc">Neueste zuerst</option>

@@ -4,10 +4,10 @@
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
       <!-- Tabs -->
-      <div class="flex border-b bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
-        <button @click="currentTab = 'files'" :class="{'border-b-2 border-elektron-blue text-elektron-blue bg-white dark:bg-gray-800': currentTab === 'files', 'text-gray-600 dark:text-gray-400': currentTab !== 'files'}" class="flex-1 py-4 px-6 text-center font-medium hover:bg-white dark:hover:bg-gray-800 transition">Dateimanager</button>
-        <button @click="currentTab = 'push'" :class="{'border-b-2 border-elektron-blue text-elektron-blue bg-white dark:bg-gray-800': currentTab === 'push', 'text-gray-600 dark:text-gray-400': currentTab !== 'push'}" class="flex-1 py-4 px-6 text-center font-medium hover:bg-white dark:hover:bg-gray-800 transition">Push Nachrichten</button>
-        <button @click="currentTab = 'settings'" :class="{'border-b-2 border-elektron-blue text-elektron-blue bg-white dark:bg-gray-800': currentTab === 'settings', 'text-gray-600 dark:text-gray-400': currentTab !== 'settings'}" class="flex-1 py-4 px-6 text-center font-medium hover:bg-white dark:hover:bg-gray-800 transition">Einstellungen</button>
+      <div class="flex border-b bg-gray-50 dark:bg-gray-900 dark:border-gray-700 overflow-x-auto">
+        <button @click="currentTab = 'files'" :class="{'border-b-2 border-elektron-blue text-elektron-blue bg-white dark:bg-gray-800': currentTab === 'files', 'text-gray-600 dark:text-gray-400': currentTab !== 'files'}" class="flex-1 py-4 px-6 text-center font-medium hover:bg-white dark:hover:bg-gray-800 transition whitespace-nowrap">Dateimanager</button>
+        <button @click="currentTab = 'push'" :class="{'border-b-2 border-elektron-blue text-elektron-blue bg-white dark:bg-gray-800': currentTab === 'push', 'text-gray-600 dark:text-gray-400': currentTab !== 'push'}" class="flex-1 py-4 px-6 text-center font-medium hover:bg-white dark:hover:bg-gray-800 transition whitespace-nowrap">Push Nachrichten</button>
+        <button @click="currentTab = 'settings'" :class="{'border-b-2 border-elektron-blue text-elektron-blue bg-white dark:bg-gray-800': currentTab === 'settings', 'text-gray-600 dark:text-gray-400': currentTab !== 'settings'}" class="flex-1 py-4 px-6 text-center font-medium hover:bg-white dark:hover:bg-gray-800 transition whitespace-nowrap">Einstellungen</button>
       </div>
 
       <div class="p-4 md:p-6">
@@ -15,18 +15,23 @@
         <div v-if="currentTab === 'files'">
             <div class="mb-4 flex flex-col md:flex-row justify-between items-center gap-4">
                 <h2 class="text-xl font-bold dark:text-white">Inhalt verwalten</h2>
-                <div class="flex space-x-2 w-full md:w-auto">
-                    <input v-model="searchQuery" @keyup.enter="performSearch" placeholder="Suchen..." class="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-elektron-blue flex-grow">
-                    <button @click="performSearch" class="bg-gray-200 dark:bg-gray-600 px-3 py-2 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-white">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    </button>
-                     <select v-model="sortOption" class="border border-gray-300 dark:border-gray-600 rounded px-2 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-elektron-blue">
+                <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                    <div class="flex flex-grow space-x-2 min-w-[200px]">
+                        <input v-model="searchQuery" @keyup.enter="performSearch" placeholder="Suchen..." class="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-elektron-blue flex-grow min-w-0">
+                        <button @click="performSearch" class="bg-gray-200 dark:bg-gray-600 px-3 py-2 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-white flex-shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </button>
+                    </div>
+                     <select v-model="sortOption" class="border border-gray-300 dark:border-gray-600 rounded px-2 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-elektron-blue flex-grow-0">
                         <option value="name_asc">Name (A-Z)</option>
                         <option value="name_desc">Name (Z-A)</option>
                         <option value="date_desc">Neueste</option>
                         <option value="date_asc">Älteste</option>
                     </select>
-                    <button @click="showCreateFolder = true" class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 px-4 py-2 rounded text-gray-800 dark:text-white whitespace-nowrap">Neuer Ordner</button>
+                    <button @click="showCreateFolder = true" class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 px-4 py-2 rounded text-gray-800 dark:text-white whitespace-nowrap">
+                         <span class="hidden sm:inline">Neuer Ordner</span>
+                         <span class="sm:hidden text-lg leading-none">+</span>
+                    </button>
                 </div>
             </div>
 
