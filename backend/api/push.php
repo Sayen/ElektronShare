@@ -92,50 +92,64 @@ if ($method === 'GET') {
              exit;
         }
 
-        $title = $input['title'];
-        $body = $input['body'];
-        $url = $input['url'] ?? '/';
+        try {
+            $title = $input['title'];
+            $body = $input['body'];
+            $url = $input['url'] ?? '/';
 
-        // Get Keys
-        $stmt = $pdo->query("SELECT value FROM settings WHERE `key` = 'vapid_public_key'");
-        $publicKey = $stmt->fetchColumn();
-        $stmt = $pdo->query("SELECT value FROM settings WHERE `key` = 'vapid_private_key'");
-        $privateKey = $stmt->fetchColumn();
+            // Get Keys
+            $stmt = $pdo->query("SELECT value FROM settings WHERE `key` = 'vapid_public_key'");
+            $publicKey = $stmt->fetchColumn();
+            $stmt = $pdo->query("SELECT value FROM settings WHERE `key` = 'vapid_private_key'");
+            $privateKey = $stmt->fetchColumn();
 
-        $auth = [
-            'VAPID' => [
-                'subject' => 'mailto:admin@example.com',
-                'publicKey' => $publicKey,
-                'privateKey' => $privateKey,
-            ],
-        ];
+            if (!$publicKey || !$privateKey) {
+                throw new Exception("VAPID keys not found in settings. Please check your configuration.");
+            }
 
-        $webPush = new WebPush($auth);
-
-        $stmt = $pdo->query("SELECT * FROM push_subscriptions");
-        while ($row = $stmt->fetch()) {
-            $subscription = Subscription::create([
-                'endpoint' => $row['endpoint'],
-                'keys' => [
-                    'p256dh' => $row['p256dh'],
-                    'auth' => $row['auth']
+            $auth = [
+                'VAPID' => [
+                    'subject' => 'mailto:admin@example.com',
+                    'publicKey' => $publicKey,
+                    'privateKey' => $privateKey,
                 ],
-            ]);
+            ];
 
-            $payload = json_encode([
-                'title' => $title,
-                'body' => $body,
-                'url' => $url,
-                'icon' => '/AppIcon.png'
-            ]);
+            $webPush = new WebPush($auth);
 
-            $webPush->queueNotification($subscription, $payload);
+            $stmt = $pdo->query("SELECT * FROM push_subscriptions");
+            while ($row = $stmt->fetch()) {
+                try {
+                    $subscription = Subscription::create([
+                        'endpoint' => $row['endpoint'],
+                        'keys' => [
+                            'p256dh' => $row['p256dh'],
+                            'auth' => $row['auth']
+                        ],
+                    ]);
+
+                    $payload = json_encode([
+                        'title' => $title,
+                        'body' => $body,
+                        'url' => $url,
+                        'icon' => '/AppIcon.png'
+                    ]);
+
+                    $webPush->queueNotification($subscription, $payload);
+                } catch (Throwable $e) {
+                    // Ignore invalid subscriptions to prevent stopping the whole batch
+                    continue;
+                }
+            }
+
+            foreach ($webPush->flush() as $report) {
+                // Handle reporting if needed
+            }
+
+            echo json_encode(['success' => true]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
         }
-
-        foreach ($webPush->flush() as $report) {
-            // Handle reporting if needed
-        }
-
-        echo json_encode(['success' => true]);
     }
 }
