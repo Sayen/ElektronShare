@@ -546,7 +546,8 @@ async function sendPush() {
         pushForm.value.title = '';
         pushForm.value.body = '';
     } catch (e) {
-        alert("Fehler beim Senden");
+        const errorMsg = e.response?.data?.error || e.message || "Fehler beim Senden";
+        alert("Fehler beim Senden: " + errorMsg);
     }
 }
 
