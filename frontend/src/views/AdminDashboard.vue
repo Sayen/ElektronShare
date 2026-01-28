@@ -10,7 +10,7 @@
         <button @click="currentTab = 'settings'" :class="{'border-b-2 border-elektron-blue text-elektron-blue bg-white dark:bg-gray-800': currentTab === 'settings', 'text-gray-600 dark:text-gray-400': currentTab !== 'settings'}" class="flex-1 py-4 px-6 text-center font-medium hover:bg-white dark:hover:bg-gray-800 transition">Einstellungen</button>
       </div>
 
-      <div class="p-6">
+      <div class="p-4 md:p-6">
         <!-- Files Tab -->
         <div v-if="currentTab === 'files'">
             <div class="mb-4 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -31,22 +31,15 @@
             </div>
 
              <div class="mb-4 text-sm text-gray-500 dark:text-gray-400 flex flex-wrap items-center">
-                <button @click="loadFolder(null)" class="hover:text-elektron-blue font-medium transition-colors mr-2"
-                        :class="{'font-bold text-gray-800 dark:text-gray-200 cursor-default': !currentFolder?.parent_id && !isSearching}">
-                    Home
-                </button>
                 <template v-if="!isSearching">
                     <span v-for="(crumb, idx) in breadcrumbs" :key="idx" class="flex items-center">
-                        <span class="mx-1">/</span>
-                        <button @click="loadFolder(crumb.id)" class="hover:text-elektron-blue font-medium transition-colors">{{ crumb.name }}</button>
-                    </span>
-                    <span v-if="currentFolder" class="flex items-center text-gray-800 dark:text-gray-200">
-                        <span class="mx-1">/</span>
-                        <strong>{{ currentFolder.name }}</strong>
+                        <span class="mx-1" v-if="idx > 0">/</span>
+                        <button v-if="idx < breadcrumbs.length - 1" @click="loadFolder(crumb.id)" class="hover:text-elektron-blue font-medium transition-colors">{{ crumb.name }}</button>
+                        <strong v-else class="text-gray-800 dark:text-gray-200 cursor-default">{{ crumb.name }}</strong>
                     </span>
                 </template>
                  <span v-else class="flex items-center text-gray-800 dark:text-gray-200">
-                     <span class="mx-1">/</span> Suche: "{{ searchQuery }}"
+                     Suche: "{{ searchQuery }}"
                 </span>
              </div>
 
@@ -69,13 +62,7 @@
                 </div>
             </div>
 
-             <div class="mb-6" v-if="currentFolder && !isSearching">
-                <label class="block font-bold mb-2 dark:text-gray-200">Ordner Beschreibung</label>
-                <div ref="editorRef" class="mb-2 bg-white dark:bg-white rounded"></div> <!-- Editor needs white bg usually or complex adaptation -->
-                <button @click="updateFolder" class="mt-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Speichern</button>
-             </div>
-
-            <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+            <ul class="divide-y divide-gray-200 dark:divide-gray-700 mb-6">
                 <li v-for="folder in sortedFolders" :key="'f'+folder.id" class="py-3 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700 px-2 rounded transition-colors">
                     <div @click="loadFolder(folder.id)" class="cursor-pointer flex items-center min-w-0">
                          <svg class="w-6 h-6 text-yellow-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
@@ -83,9 +70,15 @@
                         <span v-if="isSearching" class="ml-2 text-xs text-gray-400">in {{ folder.parent_name || 'Home' }}</span>
                     </div>
                     <div class="flex space-x-2 shrink-0">
-                        <button @click="startRename('folder', folder)" class="text-gray-500 hover:text-elektron-blue dark:text-gray-400">Umbenennen</button>
-                        <button @click="startMove('folder', folder)" class="text-gray-500 hover:text-elektron-blue dark:text-gray-400">Verschieben</button>
-                        <button @click="deleteItem('folder', folder.id)" class="text-red-500 hover:text-red-700">Löschen</button>
+                        <button @click="startRename('folder', folder)" class="text-gray-500 hover:text-elektron-blue dark:text-gray-400" title="Umbenennen">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        </button>
+                        <button @click="startMove('folder', folder)" class="text-gray-500 hover:text-elektron-blue dark:text-gray-400" title="Verschieben">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                        </button>
+                        <button @click="deleteItem('folder', folder.id)" class="text-red-500 hover:text-red-700" title="Löschen">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
                     </div>
                 </li>
                  <li v-for="file in sortedFiles" :key="'fil'+file.id" class="py-3 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700 px-2 rounded transition-colors">
@@ -97,12 +90,24 @@
                         </div>
                     </div>
                     <div class="flex space-x-2 shrink-0">
-                         <button @click="startRename('file', file)" class="text-gray-500 hover:text-elektron-blue dark:text-gray-400">Umbenennen</button>
-                         <button @click="startMove('file', file)" class="text-gray-500 hover:text-elektron-blue dark:text-gray-400">Verschieben</button>
-                        <button @click="deleteItem('file', file.id)" class="text-red-500 hover:text-red-700">Löschen</button>
+                         <button @click="startRename('file', file)" class="text-gray-500 hover:text-elektron-blue dark:text-gray-400" title="Umbenennen">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                         </button>
+                         <button @click="startMove('file', file)" class="text-gray-500 hover:text-elektron-blue dark:text-gray-400" title="Verschieben">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                         </button>
+                        <button @click="deleteItem('file', file.id)" class="text-red-500 hover:text-red-700" title="Löschen">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
                     </div>
                 </li>
             </ul>
+
+            <div class="mb-6" v-if="currentFolder && !isSearching">
+                <label class="block font-bold mb-2 dark:text-gray-200">Ordner Beschreibung</label>
+                <div ref="editorRef" class="mb-2 bg-white dark:bg-white rounded"></div> <!-- Editor needs white bg usually or complex adaptation -->
+                <button @click="updateFolder" class="mt-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Speichern</button>
+             </div>
 
             <!-- Modals -->
             <div v-if="showCreateFolder" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -200,7 +205,7 @@
       </div>
 
        <div class="bg-gray-50 dark:bg-gray-900 text-center text-xs text-gray-400 py-2 border-t dark:border-gray-700">
-          Elektron File Browser v0.2
+          Elektron File Browser v0.3
       </div>
     </div>
 
