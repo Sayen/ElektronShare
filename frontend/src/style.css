@@ -5,3 +5,49 @@
 body {
   @apply text-gray-800 bg-gray-50 dark:bg-gray-900 dark:text-gray-100;
 }
+
+/* Toast UI Editor Dark Mode Overrides for Viewer */
+.dark .elektron-viewer.toastui-editor-contents,
+.dark .elektron-viewer.toastui-editor-contents p,
+.dark .elektron-viewer.toastui-editor-contents h1,
+.dark .elektron-viewer.toastui-editor-contents h2,
+.dark .elektron-viewer.toastui-editor-contents h3,
+.dark .elektron-viewer.toastui-editor-contents h4,
+.dark .elektron-viewer.toastui-editor-contents h5,
+.dark .elektron-viewer.toastui-editor-contents h6,
+.dark .elektron-viewer.toastui-editor-contents ul,
+.dark .elektron-viewer.toastui-editor-contents ol,
+.dark .elektron-viewer.toastui-editor-contents li,
+.dark .elektron-viewer.toastui-editor-contents span,
+.dark .elektron-viewer.toastui-editor-contents div,
+.dark .elektron-viewer.toastui-editor-contents table {
+    color: #e5e7eb !important; /* gray-200 */
+}
+
+.dark .elektron-viewer.toastui-editor-contents a {
+    color: #60a5fa !important; /* blue-400 */
+}
+
+.dark .elektron-viewer.toastui-editor-contents pre {
+    background-color: #1f2937 !important; /* gray-800 */
+    color: #e5e7eb !important;
+    border: 1px solid #374151;
+}
+
+.dark .elektron-viewer.toastui-editor-contents code {
+    background-color: #374151 !important; /* gray-700 */
+    color: #e5e7eb !important;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.dark .elektron-viewer.toastui-editor-contents blockquote {
+    color: #9ca3af !important; /* gray-400 */
+    border-left-color: #4b5563 !important; /* gray-600 */
+}
+
+/* Ensure links in the editor are visible */
+.toastui-editor-contents a {
+    color: #2563eb;
+    text-decoration: underline;
+}

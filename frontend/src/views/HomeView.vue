@@ -44,7 +44,7 @@
 
     <div v-else>
       <div v-if="currentFolder && currentFolder.description && !isSearching" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6 border border-gray-200 dark:border-gray-700 transition-colors">
-           <div ref="viewerRef" class="toastui-editor-contents dark:text-gray-200"></div>
+           <div ref="viewerRef" class="toastui-editor-contents elektron-viewer dark:text-gray-200"></div>
       </div>
 
       <div v-if="sortedFolders.length > 0" class="mb-8">
