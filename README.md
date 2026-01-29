@@ -4,7 +4,7 @@
 
 A modern, progressive web application (PWA) for managing files and folders, designed with the Elektron corporate identity. Built with Vue 3 and PHP.
 
-## ✨ Features (v0.2)
+## ✨ Features (v0.3)
 
 *   **📂 File Management**: Create, Rename, Move, and recursively Delete folders and files.
 *   **🔍 Search & Sort**: Full text search and sorting options (Name, Date).
@@ -15,7 +15,7 @@ A modern, progressive web application (PWA) for managing files and folders, desi
 *   **🔔 Push Notifications**:
     *   Send notifications to all subscribers.
     *   **Deep Linking**: Direct users to specific folders from a notification.
-    *   **Technical Insights**: View subscriber details (IP, User Agent).
+    *   **Technical Insights**: View subscriber details (IP, User Agent) in the dashboard.
 *   **☁️ Multi-Upload**: Drag and drop support with progress indicators.
 *   **🛡️ Security**: CSRF Protection implemented.
 
@@ -50,7 +50,24 @@ A modern, progressive web application (PWA) for managing files and folders, desi
 3.  **Database**:
     *   Navigate to `http://localhost:8000/install.php` to set up the database and create the admin account.
 
-### Production Deployment (Hostpoint / FTP)
+### Automated Deployment (GitHub Actions)
+
+The repository includes a GitHub Actions workflow (`deploy.yml`) that automatically builds and deploys the application to the FTP server when changes are pushed to the `main` branch.
+
+**Required GitHub Secrets:**
+*   `FTP_SERVER`: The FTP server address.
+*   `FTP_USERNAME`: The FTP username.
+*   `FTP_PASSWORD`: The FTP password.
+
+The workflow:
+1.  Installs backend dependencies (`composer install`).
+2.  Builds the frontend (`npm run build`).
+3.  Uploads the `backend/` directory (which includes the built frontend assets) to the server root.
+4.  Excludes `config.php` and `uploads/` to preserve server configuration and user data.
+
+### Manual Deployment (Hostpoint / FTP)
+
+If you prefer to deploy manually:
 
 1.  **Build Frontend**:
     *   The backend relies on compiled frontend assets. You **must** build them locally first.
@@ -66,7 +83,7 @@ A modern, progressive web application (PWA) for managing files and folders, desi
 
 4.  **Database Setup**:
     *   **Fresh Install**: Go to `your-site.com/install.php`.
-    *   **Update**: If updating an existing instance (e.g. v0.1 to v0.2), you **must** upload and run `update.php` (e.g., `your-site.com/update.php`) to add new database columns. If you skip this, new features like Push Analytics might not work fully.
+    *   **Update**: If updating an existing instance (e.g., v0.2 to v0.3), you **must** upload and run `update.php` (e.g., `your-site.com/update.php`). This script creates necessary database columns (such as `ip_address` and `user_agent` for push analytics) that are required for the new version to function correctly.
 
 ## 🤖 For AI Agents
 
